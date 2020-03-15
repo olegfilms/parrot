@@ -4,7 +4,7 @@ import json,gzip,os,urllib.request,re,urllib.parse,urllib.error
 import pathlib,configparser,sqlite3,argparse,time,subprocess
 class Config:
     def __init__(self,config_path,init_config=lambda x: {}):
-        self.path = pathlib.Path(config_path).resolve()
+        self.path = pathlib.Path(config_path)
         self.path.parent.mkdir(0o777,True,True)
         self.parser=configparser.ConfigParser()
         if not self.path.exists():
