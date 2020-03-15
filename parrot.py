@@ -19,7 +19,7 @@ class Config:
     def save(self):
         with self.path.open("w") as file:
                 self.parser.write(file)
-TEST=True
+TEST=False
 RUTRACKER_API = "http://api.rutracker.org/v1"
 RUTRACKER_FORUM="http://rutracker.org/forum/index.php"
 DEFAULT_CFG={
@@ -34,6 +34,7 @@ DEFAULT_CFG={
             
         ],
         "populate_db":True,
+        "limit_row_count":-1,
         "rating_script":"./3_14rate.py",
         "min_rating":0,
         "announcers":'["http://bt.t-ru.org/ann","http://bt2.t-ru.org/ann","http://bt3.t-ru.org/ann","http://bt4.t-ru.org/ann","http://bt5.t-ru.org/ann","http://retracker.local/announce"]',
@@ -61,6 +62,7 @@ INSERT INTO torrent(name,topic_id,size,hash,rating) VALUES (?,?,?,?,?);
 DB_SEARCH_QUERY="""
 SELECT * FROM torrent WHERE name MATCH ? ORDER BY CAST(rating AS NUMERIC)DESC;
 """
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-s","--search",help="Query to search in topic database")
 parser.add_argument("-d","--repopulate",help="Force repopulation of the topic database",action="store_true")
@@ -151,6 +153,7 @@ if cfg.populate_db == "True" or args.repopulate:
     cfg.set("populate_db",False)
     cfg.save()
     db_cursor.execute(DB_DELETE_QUERY)
+    size = 0
     for forum in subforums:
         #break
 
@@ -169,11 +172,16 @@ if cfg.populate_db == "True" or args.repopulate:
                         if not args.silent:
                             print("Rating is at least "+cfg.min_rating+". Adding topic to DB...")
                         db_cursor.execute(DB_INSERT_QUERY,(data[k]["topic_title"],str(k),data[k]["size"],data[k]["info_hash"],rating))
+                        size += 1
+                        if size>=int(cfg.limit_row_count) and int(cfg.limit_row_count)>0:
+                            db_con.commit()
+                            break
                     
             db_con.commit()
-            if TEST:
+            if TEST or size>=int(cfg.limit_row_count) and int(cfg.limit_row_count)>0:
                 break
-        if TEST:
+        
+        if TEST or size>=int(cfg.limit_row_count) and int(cfg.limit_row_count)>0:
             break
 
 if args.search:
