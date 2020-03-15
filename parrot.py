@@ -76,7 +76,7 @@ def get_subforums():
 def get_topics(topic_id):
     try:
         time.sleep(int(cfg.request_delay)/1000.0)
-        return json.loads(str(gzip.open(urllib.request.urlopen(cfg.api+"/static/pvc/f/"+str(topic_id))).read()))
+        return json.load(gzip.open(urllib.request.urlopen(cfg.api+"/static/pvc/f/"+str(topic_id))))
     except urllib.error.HTTPError as http:
         print("Could not get topics at "+cfg.api+"/static/pvc/f/"+str(topic_id)+" : "+str(http))
         return {"result":[]}
