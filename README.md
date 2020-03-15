@@ -1,4 +1,4 @@
-# Parrot - commandline utility for movie reccomendations using rutracker api
+# Parrot - commandline utility for movie recomendation using rutracker api
 ## Usage
 ```bash
 $ ./parrot.py -s "lion" # prints database search results
