@@ -72,7 +72,7 @@ parser.add_argument("-n","--option",help="Get link for nth search result")
 args = parser.parse_args()
 cfg = Config(".parrot/parrot_config.ini",lambda x: DEFAULT_CFG)
 def get_subforums():
-    return json.load(gzip.open(urllib.request.urlopen(cfg.api+"/static/cat_forum_tree")))
+    return json.load(str(gzip.open(urllib.request.urlopen(cfg.api+"/static/cat_forum_tree").read())))
 def get_topics(topic_id):
     try:
         time.sleep(int(cfg.request_delay)/1000.0)
