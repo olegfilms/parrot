@@ -26,10 +26,10 @@ DEFAULT_CFG={
     "DEFAULT":{
         "api":RUTRACKER_API,
         "forum":RUTRACKER_FORUM,
-        #"forum_proxy":"https://ps1.blockme.site:443",
+
         "subforum_regex":"^Фильмы.*",
         "torrent_db_path":".parrot/torrent.db",
-        "request_delay":300,
+        "request_delay":5000,
         "subforums":[
             
         ],
@@ -167,7 +167,7 @@ if cfg.populate_db == "True" or args.repopulate:
                         print("Rating:"+rating)
                     if int(rating) >=int(cfg.min_rating):
                         if not args.silent:
-                            print("Rating is at least"+cfg.min_rating+". Adding topic to DB...")
+                            print("Rating is at least "+cfg.min_rating+". Adding topic to DB...")
                         db_cursor.execute(DB_INSERT_QUERY,(data[k]["topic_title"],str(k),data[k]["size"],data[k]["info_hash"],rating))
                     
             db_con.commit()
