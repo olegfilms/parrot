@@ -1,4 +1,4 @@
-# Parrot - commandline utility for rutracker api
+# Parrot - commandline utility for movie reccomendations using rutracker api
 ## Usage
 ```bash
 $ ./parrot.py -s "lion" # prints database search results
@@ -8,3 +8,8 @@ magnet:?xt=urn:btih:2db52fc9607517d5c4af7c2cdd4aa925931a85a1&dn=%D0%9B%D0%B5%D0%
 
 
 ```
+## TODO
+1. Add "what to watch" feature
+2. Add watched movies table in DB
+3. Add "to watch list" that will ignore rating limit
+4. Add configurable transmission remote command for adding torrents
