@@ -72,11 +72,11 @@ parser.add_argument("-n","--option",help="Get link for nth search result")
 args = parser.parse_args()
 cfg = Config(".parrot/parrot_config.ini",lambda x: DEFAULT_CFG)
 def get_subforums():
-    return json.load(gzip.open(urllib.request.urlopen(cfg.api+"/static/cat_forum_tree")))
+    return json.loads(gzip.open(urllib.request.urlopen(cfg.api+"/static/cat_forum_tree")).read().decode("utf-8"))
 def get_topics(topic_id):
     try:
         time.sleep(int(cfg.request_delay)/1000.0)
-        return json.load(gzip.open(urllib.request.urlopen(cfg.api+"/static/pvc/f/"+str(topic_id))))
+        return json.loads(gzip.open(urllib.request.urlopen(cfg.api+"/static/pvc/f/"+str(topic_id))).read().decode("utf-8"))
     except urllib.error.HTTPError as http:
         print("Could not get topics at "+cfg.api+"/static/pvc/f/"+str(topic_id)+" : "+str(http))
         return {"result":[]}
@@ -87,13 +87,13 @@ def get_tor_data(topics):
     data = urllib.request.urlopen(url)
     
     try:
-        dataj = gzip.open(data)
-        return json.load(dataj)
+        dataj = gzip.open(data).read().decode("utf-8")
+        return json.loads(dataj)
     except OSError:
         dataj = urllib.request.urlopen(url)
         
     try:
-        return json.load(dataj)
+        return json.loads(dataj.read().decode("utf-8"))
     except json.JSONDecodeError:
         #print(dataj.read())
         return {"result":[]}
