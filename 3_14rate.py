@@ -4,7 +4,7 @@ LOG = False
 KP = True
 data = json.loads(sys.argv[1])
 def out(string):
-    sys.stdout.write(str(string))
+    sys.stdout.write(str(int(string)))
     sys.stdout.flush()
     exit(0)
 def log(msg):
