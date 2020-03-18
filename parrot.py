@@ -99,7 +99,7 @@ def get_tor_data(topics):
         return {"result":[]}
 def split_topics_by_limit(t):
     time.sleep(int(cfg.request_delay)/1000.0)
-    limit = json.load(urllib.request.urlopen(cfg.api+"/get_limit"))["result"]["limit"]
+    limit = json.loads(urllib.request.urlopen(cfg.api+"/get_limit").read().decode("utf-8"))["result"]["limit"]
     k=0
     l=[]
     while k<len(t):
