@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import json,gzip,os,urllib.request,re,urllib.parse,urllib.error
 import pathlib,configparser,sqlite3,argparse,time,subprocess
