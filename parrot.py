@@ -191,6 +191,6 @@ if args.search:
     if args.option:
         print(get_magnet(search_result[int(args.option)][0],search_result[int(args.option)][3]))
     else:
-        for row in search_result:
-            print(row[0],"| [ "+row[4]+" * ]")
+        for i,row in enumerate(search_result):
+            print(str(i)+". ",row[0],"| [ "+row[4]+" * ]")
 
