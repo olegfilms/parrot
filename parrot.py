@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import json,gzip,os,urllib.request,re,urllib.parse,urllib.error
-import pathlib,configparser,sqlite3,argparse,time,subprocess
+import pathlib,configparser,sqlite3,argparse,time,subprocess,random
 class Config:
     def __init__(self,config_path,init_config=lambda x: {}):
         self.path = pathlib.Path(config_path)
@@ -27,7 +27,6 @@ DEFAULT_CFG={
     "DEFAULT":{
         "api":RUTRACKER_API,
         "forum":RUTRACKER_FORUM,
-
         "subforum_regex":"^Фильмы.*",
         "torrent_db_path":".parrot/torrent.db",
         "request_delay":5000,
@@ -38,6 +37,8 @@ DEFAULT_CFG={
         "limit_row_count":-1,
         "rating_script":"./3_14rate.py",
         "min_rating":0,
+        "w2w_percentile":70,
+        "add_torrent_cmd":"transmission-remote -a ",
         "announcers":'["http://bt.t-ru.org/ann","http://bt2.t-ru.org/ann","http://bt3.t-ru.org/ann","http://bt4.t-ru.org/ann","http://bt5.t-ru.org/ann","http://retracker.local/announce"]',
         
     }
@@ -48,7 +49,8 @@ CREATE VIRTUAL TABLE IF NOT EXISTS torrent USING fts4(
     topic_id INTEGER,
     size INTEGER,
     hash text,
-    rating INTEGER
+    rating INTEGER,
+    watched INTEGER
 );
 """
 
@@ -57,18 +59,28 @@ DELETE FROM torrent;
 """
 
 DB_INSERT_QUERY="""
-INSERT INTO torrent(name,topic_id,size,hash,rating) VALUES (?,?,?,?,?);
+INSERT INTO torrent(name,topic_id,size,hash,rating,watched) VALUES (?,?,?,?,?,0);
 """
 
 DB_SEARCH_QUERY="""
-SELECT * FROM torrent WHERE name MATCH ? ORDER BY CAST(rating AS NUMERIC)DESC;
+SELECT * FROM torrent WHERE name MATCH ? ORDER BY CAST(rating AS NUMERIC) DESC;
+"""
+
+DB_W2W_GET_QUERY = """
+SELECT * FROM ( SELECT rowid,* FROM torrent WHERE watched MATCH 0 ORDER BY CAST(rating AS NUMERIC) LIMIT 10 OFFSET (SELECT COUNT(*) FROM torrent) * ? /100 - 1) ORDER BY CAST(rating AS NUMERIC) DESC;
+"""
+
+DB_SET_WATCHED_QUERY="""
+UPDATE torrent SET watched=1 WHERE rowid=?
 """
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-s","--search",nargs='+',help="Query to search in topic database")
+parser.add_argument("-w","--what2watch",help="Select n-th percentile by rating and choose random entry",action='store_true')
 parser.add_argument("-d","--repopulate",help="Force repopulation of the topic database",action="store_true")
 parser.add_argument("-S","--silent",help="Do not output log",action="store_true")
-parser.add_argument("-n","--option",help="Get link for nth search result")
+parser.add_argument("-n","--option",help="Get link for n-th search result")
+parser.add_argument("-a","--add",help="Add torrent to torrent client",action="store_true")
 args = parser.parse_args()
 cfg = Config(".parrot/parrot_config.ini",lambda x: DEFAULT_CFG)
 def get_subforums():
@@ -189,8 +201,35 @@ if args.search:
     bind = tuple([' '.join(map(str,args.search))])
     search_result = list(db_cursor.execute(DB_SEARCH_QUERY,bind))
     if args.option:
-        print(get_magnet(search_result[int(args.option)][0],search_result[int(args.option)][3]))
+        N=int(args.option)
+        db_cursor.execute(DB_SET_WATCHED_QUERY,tuple([search_result[N][0]]))
+        db_con.commit()
+        if args.add:
+            os.system(cfg.add_torrent_cmd +" '"+get_magnet(search_result[N][0],search_result[N][3])+"'")
+        else:
+            print(get_magnet(search_result[N][0],search_result[N][3]))
     else:
         for i,row in enumerate(search_result):
-            print(str(i)+". ",row[0],"| [ "+row[4]+" * ]")
+            watched = row[5] != 0
+
+            s = str(i)+". "+row[0]+"| [ "+row[4]+" * ]"
+            print(("\033[1m{}\033[0m" if watched else "{}").format(s))
+elif args.what2watch:
+    bind = tuple([str(cfg.w2w_percentile)])
+    search_result = list(db_cursor.execute(DB_W2W_GET_QUERY,bind))
+    if args.option:
+        N=int(args.option)
+        if N<0:
+            N=random.randrange(len(search_result))
+        db_cursor.execute(DB_SET_WATCHED_QUERY,tuple([search_result[N][0]]))
+        db_con.commit()
+        if args.add:
+            os.system(cfg.add_torrent_cmd +" '"+get_magnet(search_result[N][1],search_result[N][4])+"'")
+        else:
+            print(get_magnet(search_result[N][1],search_result[N][4]))
+    else:
+        for i,row in enumerate(search_result):
+            print(str(i)+". ",row[1],"| [ "+row[5]+" * ]")
+
+
 

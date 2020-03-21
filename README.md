@@ -13,3 +13,4 @@ magnet:?xt=urn:btih:2db52fc9607517d5c4af7c2cdd4aa925931a85a1&dn=%D0%9B%D0%B5%D0%
 2. Add watched movies table in DB
 3. Add "to watch list" that will ignore rating limit
 4. Add configurable transmission remote command for adding torrents
+5. Parallellize rating calculation.
