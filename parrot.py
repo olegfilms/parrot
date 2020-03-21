@@ -65,7 +65,7 @@ SELECT * FROM torrent WHERE name MATCH ? ORDER BY CAST(rating AS NUMERIC)DESC;
 """
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-s","--search",help="Query to search in topic database")
+parser.add_argument("-s","--search",nargs='+',help="Query to search in topic database")
 parser.add_argument("-d","--repopulate",help="Force repopulation of the topic database",action="store_true")
 parser.add_argument("-S","--silent",help="Do not output log",action="store_true")
 parser.add_argument("-n","--option",help="Get link for nth search result")
@@ -186,7 +186,7 @@ if cfg.populate_db == "True" or args.repopulate:
             break
 
 if args.search:
-    bind = tuple([str(args.search)])
+    bind = tuple([' '.join(map(str,args.search))])
     search_result = list(db_cursor.execute(DB_SEARCH_QUERY,bind))
     if args.option:
         print(get_magnet(search_result[int(args.option)][0],search_result[int(args.option)][3]))
