@@ -29,7 +29,8 @@ DEFAULT_CFG={
         "forum":RUTRACKER_FORUM,
         "subforum_regex":"^Фильмы.*",
         "torrent_db_path":".parrot/torrent.db",
-        "request_delay":5000,
+        "request_delay":500,
+        "parallel_rating":False,
         "subforums":[
             
         ],
@@ -63,7 +64,7 @@ INSERT INTO torrent(name,topic_id,size,hash,rating,watched) VALUES (?,?,?,?,?,0)
 """
 
 DB_SEARCH_QUERY="""
-SELECT * FROM torrent WHERE name MATCH ? ORDER BY CAST(rating AS NUMERIC) DESC;
+SELECT rowid,* FROM torrent WHERE name MATCH ? ORDER BY CAST(rating AS NUMERIC) DESC;
 """
 
 DB_W2W_GET_QUERY = """
@@ -136,10 +137,26 @@ def get_rating(tor_data):
     if not len(cfg.rating_script):
         return str(0)
     try:
-        return subprocess.check_output([cfg.rating_script,json.dumps(tor_data)]).decode("utf-8")
+        return subprocess.check_output([os.path.realpath(cfg.rating_script),json.dumps(tor_data)]).decode("utf-8")
     except subprocess.CalledProcessError:
         return str(0)
     return str(0)
+def r8_batch(data):
+    rating={}
+    ps={}
+    for k in data:
+        if data[k]:
+            if not args.silent:
+                print("Spawning process for rating topic",k,"...")
+            ps[k]=subprocess.Popen([os.path.realpath(cfg.rating_script),json.dumps(data[k])],stdout=subprocess.PIPE)
+    for k in data:
+        if data[k]:
+            out,err = ps[k].communicate()
+            if not args.silent:
+                print("Finished rating topic",k)
+            rating [k]=out.decode("utf-8") if out and len(out) else str(0)
+    return rating
+    
 def get_magnet(name,t_hash):
     return "magnet:?xt=urn:btih:"+t_hash.lower()+"&dn="+urllib.parse.quote(name)+"&"+"&".join(map(lambda x:"tr="+str(x),json.loads(cfg.announcers)))#"&tr=http://bt.t-ru.org/ann&tr=http://retracker.local/announce"
 if len(json.loads(cfg.subforums))==0:
@@ -174,11 +191,14 @@ if cfg.populate_db == "True" or args.repopulate:
         
         for batch in split_topics_by_limit(topics):
             data = get_tor_data(list(batch))["result"]
+            p = cfg.parallel_rating == "True"
+            if p:
+                r8 = r8_batch(data)
             for k in data:
                 if data[k]:
                     if not args.silent:
                         print("Found topic: "+data[k]["topic_title"])
-                    rating = str(get_rating(data[k]))
+                    rating = str(r8[k])if p else str (get_rating(data[k]))
                     if not args.silent:
                         print("Rating:"+rating)
                     if int(rating) >=int(cfg.min_rating):
@@ -205,15 +225,16 @@ if args.search:
         db_cursor.execute(DB_SET_WATCHED_QUERY,tuple([search_result[N][0]]))
         db_con.commit()
         if args.add:
-            os.system(cfg.add_torrent_cmd +" '"+get_magnet(search_result[N][0],search_result[N][3])+"'")
+            os.system(cfg.add_torrent_cmd +" '"+get_magnet(search_result[N][1],search_result[N][4])+"'")
         else:
-            print(get_magnet(search_result[N][0],search_result[N][3]))
+            print(get_magnet(search_result[N][1],search_result[N][4]))
     else:
         for i,row in enumerate(search_result):
-            watched = row[5] != 0
-
-            s = str(i)+". "+row[0]+"| [ "+row[4]+" * ]"
-            print(("\033[1m{}\033[0m" if watched else "{}").format(s))
+            watched = row[6] != 0
+          
+            formatted =True
+            s = str(i)+". "+row[1]+"| [ "+row[5]+" * ]"
+            print(("\033[1m{}\033[0m" if watched and formatted else "{}").format(s))
 elif args.what2watch:
     bind = tuple([str(cfg.w2w_percentile)])
     search_result = list(db_cursor.execute(DB_W2W_GET_QUERY,bind))
