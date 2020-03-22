@@ -232,7 +232,7 @@ if args.search:
         for i,row in enumerate(search_result):
             watched = row[6] != 0
           
-            formatted =True
+            formatted = not args.silent
             s = str(i)+". "+row[1]+"| [ "+row[5]+" * ]"
             print(("\033[1m{}\033[0m" if watched and formatted else "{}").format(s))
 elif args.what2watch:
