@@ -34,7 +34,7 @@ DEFAULT_CFG={
         "subforums":[
             
         ],
-        "populate_db":True,
+        "populate_db":False,
         "limit_row_count":-1,
         "rating_script":"./3_14rate.py",
         "min_rating":0,
