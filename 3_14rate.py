@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import sys,json,time,math
+import sys,json,time,math,re
 LOG = False
 KP = True
 data = json.loads(sys.argv[1])
@@ -19,12 +19,18 @@ if data["tor_status"] == 2:
         try:
             log("KP lib found")
             from kinopoisk.movie import Movie
-            movie = Movie.objects.search( data["topic_title"].split("/")[0])[0]
+            title = re.sub(r"(^[ \-_+ \t*$%@!()+=\"'/\\]*\[[^\[\]]*\])|(\[[^\]\[]*\][^\[\]]*)", "",data["topic_title"]).split("/")[0]
+            movie = Movie.objects.search(title)[0]
+            log(title)
             log(movie.title)
             r= (movie.rating if not movie.rating is None else 0)
             log(r)
             val= math.floor((r+1)*val)
         except ImportError:
+            pass
+        except ConnectionError:
+            pass
+        except IndexError:
             pass
     out(val)
 else:
