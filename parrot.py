@@ -92,7 +92,7 @@ def get_topics(topic_id):
         return json.loads(gzip.open(urllib.request.urlopen(cfg.api+"/static/pvc/f/"+str(topic_id))).read().decode("utf-8"))
     except urllib.error.HTTPError as http:
         print("Could not get topics at "+cfg.api+"/static/pvc/f/"+str(topic_id)+" : "+str(http))
-        return {"result":[]}
+        return {"result":{}}
 def get_tor_data(topics):
     time.sleep(int(cfg.request_delay)/1000.0)
     url = cfg.api+"/get_tor_topic_data?"+urllib.parse.urlencode({"by":"topic_id","val":",".join(topics)})
