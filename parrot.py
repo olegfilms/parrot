@@ -184,7 +184,9 @@ if cfg.populate_db == "True" or args.repopulate:
     cfg.save()
     db_cursor.execute(DB_DELETE_QUERY)
     size = 0
-    for forum in random.shuffle(subforums):
+    if subforums:
+        random.shuffle(subforums)
+    for forum in subforums:
         #break
 
         topics=list(get_topics(forum)["result"].keys())
